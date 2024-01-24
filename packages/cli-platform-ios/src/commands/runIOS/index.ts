@@ -145,6 +145,19 @@ async function runIOS(_: Array<string>, ctx: Config, args: FlagsT) {
   }
 
   if (!args.device && !args.udid && !args.simulator) {
+    const preferences = process.env.PREFERRED_IOS_DEVICES?.split(',') ?? [];
+    const found = preferences.flatMap((pref) =>
+      availableDevices.filter((dev) => dev.name === pref || dev.udid === pref),
+    )[0];
+    if (found) {
+      logger.info('Running on device from preferred devices list');
+      if (found.type === 'simulator') {
+        return runOnSimulator(xcodeProject, mode, scheme, args, found);
+      } else {
+        return runOnDevice(found, mode, scheme, xcodeProject, args);
+      }
+    }
+
     const bootedDevices = availableDevices.filter(
       ({type}) => type === 'device',
     );
